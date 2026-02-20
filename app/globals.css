@@ -386,6 +386,25 @@ button:focus-visible {
   display: none;
 }
 
+.product-not-found {
+  display: grid;
+  min-height: clamp(280px, 45vh, 420px);
+  align-items: center;
+}
+
+.product-not-found-card {
+  width: min(560px, 100%);
+  margin: 0 auto;
+  display: grid;
+  gap: 0.9rem;
+  padding: clamp(1rem, 2.2vw, 1.4rem);
+}
+
+.product-not-found-card .primary-button {
+  justify-self: start;
+  margin-top: 0.25rem;
+}
+
 .product-layout.quick .market-col {
   padding: 0.72rem;
 }
@@ -476,6 +495,14 @@ button:focus-visible {
 .product-main {
   display: grid;
   gap: 1rem;
+}
+
+.add-inventory-mobile {
+  display: none;
+}
+
+.product-lookup-mobile {
+  display: none;
 }
 
 .product-lookup {
@@ -942,6 +969,24 @@ button:focus-visible {
   }
 }
 
+@media (max-width: 979px) {
+  .add-inventory-desktop {
+    display: none;
+  }
+
+  .add-inventory-mobile {
+    display: block;
+  }
+
+  .product-lookup-desktop {
+    display: none;
+  }
+
+  .product-lookup-mobile {
+    display: block;
+  }
+}
+
 @media (max-width: 920px) {
   .market-grid.quick {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -1005,5 +1050,9 @@ button:focus-visible {
   .label,
   .sku-inline {
     color: #444 !important;
+  }
+
+  .print-hide {
+    display: none !important;
   }
 }

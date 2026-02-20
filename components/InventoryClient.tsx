@@ -3,10 +3,16 @@
 import Link from "next/link";
 
 import { InventoryTable } from "@/components/InventoryTable";
+import { PageSearchCard } from "@/components/PageSearchCard";
 import { useInventory } from "@/hooks/useInventory";
 import { formatCurrency } from "@/lib/format";
+import type { ShoeSearchResult } from "@/lib/types";
 
-export function InventoryClient() {
+type InventoryClientProps = {
+  catalog: ShoeSearchResult[];
+};
+
+export function InventoryClient({ catalog }: InventoryClientProps) {
   const { items, hydrated, summary, updateItem, removeItem } = useInventory();
 
   if (!hydrated) {
@@ -15,6 +21,8 @@ export function InventoryClient() {
 
   return (
     <div className="inventory-shell">
+      <PageSearchCard catalog={catalog} />
+
       <section className="summary-cards">
         <article className="panel-card">
           <p className="label">Total items</p>

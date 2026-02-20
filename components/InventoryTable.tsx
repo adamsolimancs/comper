@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 
+import { calculateComperComp } from "@/lib/comp";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { PLATFORMS } from "@/lib/types";
-import type { InventoryItem, Platform } from "@/lib/types";
+import type { InventoryItem, MarketSnapshot, Platform } from "@/lib/types";
 
 type InventoryTableProps = {
   items: InventoryItem[];
@@ -30,6 +32,36 @@ function itemToDraft(item: InventoryItem): SellDraft {
 
 export function InventoryTable({ items, onUpdate, onRemove }: InventoryTableProps) {
   const [sellDrafts, setSellDrafts] = useState<Record<string, SellDraft>>({});
+  const [avgBuyNowByMarketKey, setAvgBuyNowByMarketKey] = useState<Record<string, number | null>>({});
+  const [loadingMarketKeys, setLoadingMarketKeys] = useState<Record<string, boolean>>({});
+  const requestedMarketKeysRef = useRef<Set<string>>(new Set());
+
+  const marketLookupItems = useMemo(() => {
+    const unique = new Map<
+      string,
+      {
+        shoeId: string;
+        size: number;
+        condition: InventoryItem["condition"];
+      }
+    >();
+
+    for (const item of items) {
+      const key = `${item.shoeId}:${item.size}:${item.condition}`;
+      if (!unique.has(key)) {
+        unique.set(key, {
+          shoeId: item.shoeId,
+          size: item.size,
+          condition: item.condition
+        });
+      }
+    }
+
+    return Array.from(unique.entries()).map(([key, value]) => ({
+      key,
+      ...value
+    }));
+  }, [items]);
 
   useEffect(() => {
     const itemIds = new Set(items.map((item) => item.id));
@@ -43,6 +75,109 @@ export function InventoryTable({ items, onUpdate, onRemove }: InventoryTableProp
       return next;
     });
   }, [items]);
+
+  useEffect(() => {
+    const activeMarketKeys = new Set(marketLookupItems.map((entry) => entry.key));
+    requestedMarketKeysRef.current = new Set(
+      Array.from(requestedMarketKeysRef.current).filter((key) => activeMarketKeys.has(key))
+    );
+
+    setAvgBuyNowByMarketKey((current) => {
+      const next: Record<string, number | null> = {};
+
+      for (const [key, value] of Object.entries(current)) {
+        if (activeMarketKeys.has(key)) {
+          next[key] = value;
+        }
+      }
+
+      return next;
+    });
+
+    setLoadingMarketKeys((current) => {
+      const next: Record<string, boolean> = {};
+
+      for (const [key, value] of Object.entries(current)) {
+        if (activeMarketKeys.has(key)) {
+          next[key] = value;
+        }
+      }
+
+      return next;
+    });
+
+    const pendingEntries = marketLookupItems.filter(
+      (entry) => !requestedMarketKeysRef.current.has(entry.key)
+    );
+
+    if (pendingEntries.length === 0) {
+      return;
+    }
+
+    for (const entry of pendingEntries) {
+      requestedMarketKeysRef.current.add(entry.key);
+    }
+
+    setLoadingMarketKeys((current) => {
+      const next = { ...current };
+      for (const entry of pendingEntries) {
+        next[entry.key] = true;
+      }
+      return next;
+    });
+
+    async function loadMarketAverages() {
+      const results = await Promise.all(
+        pendingEntries.map(async (entry) => {
+          try {
+            const params = new URLSearchParams({
+              size: String(entry.size),
+              condition: entry.condition,
+              variant: "any",
+              schema: `platforms-${PLATFORMS.length}`
+            });
+
+            const response = await fetch(`/api/market/${entry.shoeId}?${params.toString()}`, {
+              cache: "no-store"
+            });
+
+            if (!response.ok) {
+              return { key: entry.key, averageBuyNow: null as number | null };
+            }
+
+            const snapshot = (await response.json()) as MarketSnapshot;
+            const averageBuyNow = calculateComperComp(snapshot.platforms).breakdown.averageBuyNow;
+
+            if (!Number.isFinite(averageBuyNow) || averageBuyNow <= 0) {
+              return { key: entry.key, averageBuyNow: null as number | null };
+            }
+
+            return { key: entry.key, averageBuyNow };
+          } catch {
+            return { key: entry.key, averageBuyNow: null as number | null };
+          }
+        })
+      );
+
+      setAvgBuyNowByMarketKey((current) => {
+        const next = { ...current };
+        for (const result of results) {
+          next[result.key] = result.averageBuyNow;
+        }
+        return next;
+      });
+
+      setLoadingMarketKeys((current) => {
+        const next = { ...current };
+        for (const result of results) {
+          delete next[result.key];
+        }
+        return next;
+      });
+    }
+
+    loadMarketAverages();
+  }, [marketLookupItems]);
 
   if (items.length === 0) {
     return (
@@ -60,6 +195,7 @@ export function InventoryTable({ items, onUpdate, onRemove }: InventoryTableProp
           <tr>
             <th>Shoe</th>
             <th>Purchase</th>
+            <th>Avg market (buy now)</th>
             <th>Sell data</th>
             <th>P/L</th>
             <th />
@@ -69,6 +205,9 @@ export function InventoryTable({ items, onUpdate, onRemove }: InventoryTableProp
           {items.map((item) => {
             const hasSale = Number.isFinite(item.soldPrice);
             const profit = (item.soldPrice ?? 0) - item.purchasePrice;
+            const marketKey = `${item.shoeId}:${item.size}:${item.condition}`;
+            const avgBuyNow = avgBuyNowByMarketKey[marketKey];
+            const loadingMarket = loadingMarketKeys[marketKey] || avgBuyNow === undefined;
             const baseline = itemToDraft(item);
             const draft = sellDrafts[item.id] ?? baseline;
             const draftDirty =
@@ -79,7 +218,9 @@ export function InventoryTable({ items, onUpdate, onRemove }: InventoryTableProp
             return (
               <tr key={item.id}>
                 <td>
-                  <p className="table-main">{item.shoeName}</p>
+                  <p className="table-main">
+                    <Link href={`/product/${item.shoeId}`}>{item.shoeName}</Link>
+                  </p>
                   <p className="muted-copy">
                     {item.sku} • Size {item.size} • {item.condition}
                   </p>
@@ -90,6 +231,15 @@ export function InventoryTable({ items, onUpdate, onRemove }: InventoryTableProp
                   <p className="muted-copy">
                     {item.purchasePlatform} • {formatDate(item.purchaseDate)}
                   </p>
+                </td>
+                <td>
+                  {loadingMarket ? (
+                    <p className="muted-copy">Loading...</p>
+                  ) : avgBuyNow !== null && avgBuyNow !== undefined ? (
+                    <p className="table-main">{formatCurrency(avgBuyNow)}</p>
+                  ) : (
+                    <p className="muted-copy">Unavailable</p>
+                  )}
                 </td>
                 <td>
                   <div className="sell-fields">

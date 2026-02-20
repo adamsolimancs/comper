@@ -189,8 +189,58 @@ export function ProductCompClient({ shoe, catalog }: ProductCompClientProps) {
     router.push(`/?q=${encodeURIComponent(value.trim())}`);
   };
 
+  const renderLookupCard = (modeClassName: "product-lookup-mobile" | "product-lookup-desktop") => (
+    <section className={`panel-card product-lookup ${modeClassName}`}>
+      <form
+        className="product-lookup-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          goToLookup(lookupQuery);
+          setLookupOpen(false);
+        }}
+      >
+        <input
+          className="product-lookup-input"
+          placeholder="Find another shoe by name, SKU, or brand"
+          value={lookupQuery}
+          onChange={(event) => {
+            setLookupQuery(event.target.value);
+            setLookupOpen(true);
+          }}
+          onFocus={() => setLookupOpen(true)}
+          onBlur={() => window.setTimeout(() => setLookupOpen(false), 120)}
+          aria-label="Search shoes from product page"
+        />
+        <button className="ghost-button" type="submit">
+          Go
+        </button>
+      </form>
+      {lookupOpen ? (
+        <div className="product-lookup-list">
+          {lookupSuggestions.length === 0 ? <p className="muted-copy">No matches</p> : null}
+          {lookupSuggestions.map((product) => (
+            <button
+              key={product.id}
+              className="product-lookup-item"
+              type="button"
+              onClick={() => {
+                router.push(`/product/${product.id}`);
+                setLookupOpen(false);
+              }}
+            >
+              <span>{product.name}</span>
+              <span className="sku-inline">{product.sku}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+
   return (
     <div className={quickCompMode ? "product-layout quick" : "product-layout"}>
+      {renderLookupCard("product-lookup-mobile")}
+
       <aside className="product-card panel-card sticky">
         <div className="product-image-wrap large">
           <Image
@@ -276,55 +326,13 @@ export function ProductCompClient({ shoe, catalog }: ProductCompClientProps) {
 
         <QuickCompToggle enabled={quickCompMode} onChange={setQuickCompMode} />
 
-        <AddToInventory shoe={shoe} size={selection.size} condition={selection.condition} />
+        <div className="add-inventory-desktop">
+          <AddToInventory shoe={shoe} size={selection.size} condition={selection.condition} />
+        </div>
       </aside>
 
       <section className="product-main">
-        <section className="panel-card product-lookup">
-          <form
-            className="product-lookup-form"
-            onSubmit={(event) => {
-              event.preventDefault();
-              goToLookup(lookupQuery);
-              setLookupOpen(false);
-            }}
-          >
-            <input
-              className="product-lookup-input"
-              placeholder="Find another shoe by name, SKU, or brand"
-              value={lookupQuery}
-              onChange={(event) => {
-                setLookupQuery(event.target.value);
-                setLookupOpen(true);
-              }}
-              onFocus={() => setLookupOpen(true)}
-              onBlur={() => window.setTimeout(() => setLookupOpen(false), 120)}
-              aria-label="Search shoes from product page"
-            />
-            <button className="ghost-button" type="submit">
-              Go
-            </button>
-          </form>
-          {lookupOpen ? (
-            <div className="product-lookup-list">
-              {lookupSuggestions.length === 0 ? <p className="muted-copy">No matches</p> : null}
-              {lookupSuggestions.map((product) => (
-                <button
-                  key={product.id}
-                  className="product-lookup-item"
-                  type="button"
-                  onClick={() => {
-                    router.push(`/product/${product.id}`);
-                    setLookupOpen(false);
-                  }}
-                >
-                  <span>{product.name}</span>
-                  <span className="sku-inline">{product.sku}</span>
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </section>
+        {renderLookupCard("product-lookup-desktop")}
 
         <div className="panel-head">
           <h2>Marketplace comps ({marketSnapshot?.platforms.length ?? PLATFORMS.length})</h2>
@@ -355,6 +363,10 @@ export function ProductCompClient({ shoe, catalog }: ProductCompClientProps) {
         ) : null}
 
         {!loading && marketSnapshot ? <CompSummary comp={comp} lastUpdated={marketSnapshot.lastUpdated} /> : null}
+
+        <div className="add-inventory-mobile">
+          <AddToInventory shoe={shoe} size={selection.size} condition={selection.condition} />
+        </div>
       </section>
 
       <MarketplaceModal open={Boolean(activeMarket)} market={activeMarket} onClose={() => setActiveMarket(null)} />

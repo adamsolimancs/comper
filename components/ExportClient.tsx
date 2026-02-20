@@ -2,10 +2,16 @@
 
 import { useMemo } from "react";
 
+import { PageSearchCard } from "@/components/PageSearchCard";
 import { useInventory } from "@/hooks/useInventory";
 import { formatCurrency, formatDate } from "@/lib/format";
+import type { ShoeSearchResult } from "@/lib/types";
 
-export function ExportClient() {
+type ExportClientProps = {
+  catalog: ShoeSearchResult[];
+};
+
+export function ExportClient({ catalog }: ExportClientProps) {
   const { items, hydrated, summary } = useInventory();
 
   const exportRows = useMemo(() => {
@@ -27,6 +33,8 @@ export function ExportClient() {
 
   return (
     <div className="export-shell print-surface">
+      <PageSearchCard catalog={catalog} className="print-hide" />
+
       <div className="export-head no-print">
         <h1>Inventory export</h1>
         <button className="primary-button" onClick={() => window.print()}>
