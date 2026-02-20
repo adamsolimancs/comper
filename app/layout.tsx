@@ -8,11 +8,36 @@ import "./globals.css";
 const appName = "Comper";
 const appDescription =
   "Compare sneaker resale prices instantly across marketplaces to comp faster and make better buy/sell decisions.";
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+const defaultLocalUrl = "http://localhost:3000";
+
+function normalizeSiteUrl(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return defaultLocalUrl;
+  }
+
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
+  }
+
+  return `https://${trimmed}`;
+}
+
+const siteUrl = normalizeSiteUrl(
+  process.env.SITE_URL ??
+    process.env.NEXT_PUBLIC_APP_URL ??
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ??
+    process.env.VERCEL_URL ??
+    defaultLocalUrl
+);
+const ogImagePath = "/og-image.png";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   applicationName: appName,
+  alternates: {
+    canonical: "/"
+  },
   title: {
     default: appName,
     template: `%s | ${appName}`
@@ -28,21 +53,22 @@ export const metadata: Metadata = {
     siteName: appName,
     title: appName,
     description: appDescription,
-    url: "/",
+    url: siteUrl,
     images: [
       {
-        url: "/icon.svg",
-        width: 512,
-        height: 512,
+        url: ogImagePath,
+        width: 1200,
+        height: 630,
+        type: "image/png",
         alt: "Comper logo"
       }
     ]
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: appName,
     description: appDescription,
-    images: ["/icon.svg"]
+    images: [ogImagePath]
   }
 };
 
