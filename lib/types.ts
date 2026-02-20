@@ -1,4 +1,13 @@
-export const PLATFORMS = ["StockX", "GOAT", "eBay", "Flight Club", "KicksCrew"] as const;
+export const PLATFORMS = [
+  "StockX",
+  "GOAT",
+  "eBay",
+  "Flight Club",
+  "KicksCrew",
+  "Poizon",
+  "Alias",
+  "Stadium Goods"
+] as const;
 
 export type Platform = (typeof PLATFORMS)[number];
 
@@ -56,12 +65,11 @@ export type MarketSnapshot = {
 };
 
 export type CompBreakdown = {
-  trimmedMean: number;
-  median: number;
-  weightedMean: number;
+  averageLastSale: number;
+  medianLastSale: number;
+  averageBuyNow: number;
+  averageHighestBid: number;
   sampleSize: number;
-  outliersRemoved: number;
-  platformWeights: Array<{ platform: Platform; weight: number }>;
 };
 
 export type CompResult = {

@@ -3,6 +3,7 @@ import { getOrSetCache } from "@/lib/cache";
 import type { Condition, MarketSnapshot } from "@/lib/types";
 
 const MARKET_TTL_MS = 1000 * 60 * 5;
+const MARKET_SCHEMA_VERSION = "v2";
 
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => {
@@ -16,7 +17,7 @@ export async function getMarketSnapshot(
   condition: Condition,
   variant: string
 ): Promise<MarketSnapshot> {
-  const cacheKey = `market:${shoeId}:${size}:${condition}:${variant}`;
+  const cacheKey = `market:${MARKET_SCHEMA_VERSION}:${shoeId}:${size}:${condition}:${variant}`;
 
   const { value, createdAt, cacheHit } = await getOrSetCache(cacheKey, MARKET_TTL_MS, async () => {
     await wait(220);

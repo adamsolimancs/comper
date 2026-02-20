@@ -13,12 +13,16 @@ import { useProductPrefs, useQuickCompMode } from "@/hooks/useProductPrefs";
 import { useRecentProducts } from "@/hooks/useRecentProducts";
 import { calculateComperComp } from "@/lib/comp";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { shouldZoomOutShoeImage } from "@/lib/image-presentation";
+import { PLATFORMS } from "@/lib/types";
 import type { Condition, MarketSnapshot, PlatformMarket, Shoe } from "@/lib/types";
 
 type ProductCompClientProps = {
   shoe: Shoe;
   catalog: Shoe[];
 };
+
+const ANY_VARIANT = "any";
 
 function normalizeSelection(
   current: { size: number; condition: Condition; variant: string },
@@ -27,7 +31,10 @@ function normalizeSelection(
   return {
     size: shoe.availableSizes.includes(current.size) ? current.size : shoe.availableSizes[0],
     condition: current.condition,
-    variant: shoe.variants.includes(current.variant) ? current.variant : shoe.variants[0]
+    variant:
+      current.variant === ANY_VARIANT || shoe.variants.includes(current.variant)
+        ? current.variant
+        : shoe.variants[0]
   };
 }
 
@@ -74,7 +81,8 @@ export function ProductCompClient({ shoe, catalog }: ProductCompClientProps) {
         const params = new URLSearchParams({
           size: String(selection.size),
           condition: selection.condition,
-          variant: selection.variant
+          variant: selection.variant,
+          schema: `platforms-${PLATFORMS.length}`
         });
 
         const response = await fetch(`/api/market/${shoe.id}?${params.toString()}`, {
@@ -110,6 +118,19 @@ export function ProductCompClient({ shoe, catalog }: ProductCompClientProps) {
 
   const comp = useMemo(() => {
     return calculateComperComp(marketSnapshot?.platforms ?? []);
+  }, [marketSnapshot]);
+  const zoomOutImage = shouldZoomOutShoeImage(shoe.sku);
+  const lowestBuyNow = useMemo(() => {
+    const buyNowValues =
+      marketSnapshot?.platforms
+        .map((platform) => platform.buyNow)
+        .filter((value) => Number.isFinite(value) && value > 0) ?? [];
+
+    if (buyNowValues.length === 0) {
+      return null;
+    }
+
+    return Math.min(...buyNowValues);
   }, [marketSnapshot]);
 
   const lookupSuggestions = useMemo(() => {
@@ -172,7 +193,14 @@ export function ProductCompClient({ shoe, catalog }: ProductCompClientProps) {
     <div className={quickCompMode ? "product-layout quick" : "product-layout"}>
       <aside className="product-card panel-card sticky">
         <div className="product-image-wrap large">
-          <Image src={shoe.images[0] ?? "/shoe-placeholder.png"} alt={shoe.name} fill sizes="480px" priority />
+          <Image
+            src={shoe.images[0] ?? "/shoe-placeholder.png"}
+            alt={shoe.name}
+            fill
+            sizes="480px"
+            priority
+            className={zoomOutImage ? "image-zoom-out" : undefined}
+          />
         </div>
         <p className="product-brand">{shoe.brand}</p>
         <h1 className="product-title">{shoe.name}</h1>
@@ -236,6 +264,7 @@ export function ProductCompClient({ shoe, catalog }: ProductCompClientProps) {
                 })
               }
             >
+              <option value={ANY_VARIANT}>Any</option>
               {shoe.variants.map((variant) => (
                 <option key={variant} value={variant}>
                   {variant}
@@ -298,8 +327,7 @@ export function ProductCompClient({ shoe, catalog }: ProductCompClientProps) {
         </section>
 
         <div className="panel-head">
-          <h2>Marketplace comps</h2>
-          <p className="muted-copy">Tap a marketplace for trend + recent sales details.</p>
+          <h2>Marketplace comps ({marketSnapshot?.platforms.length ?? PLATFORMS.length})</h2>
         </div>
 
         {loading ? (
@@ -320,6 +348,7 @@ export function ProductCompClient({ shoe, catalog }: ProductCompClientProps) {
                 data={market}
                 onOpen={() => setActiveMarket(market)}
                 compact={quickCompMode}
+                isLowestBuyNow={lowestBuyNow !== null && market.buyNow === lowestBuyNow}
               />
             ))}
           </div>

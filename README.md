@@ -1,6 +1,6 @@
 # Comper
 
-Demo-quality Next.js mock web app for sneaker resellers and buyers to comp prices across StockX, GOAT, eBay, Flight Club, and KicksCrew.
+Demo-quality Next.js mock web app for sneaker resellers and buyers to comp prices across StockX, GOAT, eBay, Flight Club, KicksCrew, Poizon, Alias, and Stadium Goods.
 
 ## Stack
 

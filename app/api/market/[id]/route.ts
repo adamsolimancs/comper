@@ -23,8 +23,13 @@ export async function GET(request: Request, { params }: Params) {
   const conditionParam = (url.searchParams.get("condition") ?? "new").toLowerCase();
   const condition: Condition = conditionParam === "used" ? "used" : "new";
 
-  const variantParam = url.searchParams.get("variant") ?? shoe.variants[0];
-  const variant = shoe.variants.includes(variantParam) ? variantParam : shoe.variants[0];
+  const variantParam = (url.searchParams.get("variant") ?? shoe.variants[0]).trim();
+  const variant =
+    variantParam.toLowerCase() === "any"
+      ? "Any"
+      : shoe.variants.includes(variantParam)
+        ? variantParam
+        : shoe.variants[0];
 
   const snapshot = await getMarketSnapshot(id, size, condition, variant);
 

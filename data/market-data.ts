@@ -1,5 +1,6 @@
 import { getShoeById } from "@/data/shoes";
 import { createSeededRng } from "@/lib/seed";
+import { PLATFORMS } from "@/lib/types";
 import type { Condition, MarketSnapshot, Platform, PlatformMarket, TrendPoint } from "@/lib/types";
 
 const PLATFORM_FACTORS: Record<Platform, number> = {
@@ -7,7 +8,10 @@ const PLATFORM_FACTORS: Record<Platform, number> = {
   GOAT: 1.02,
   eBay: 0.96,
   "Flight Club": 1.07,
-  KicksCrew: 0.99
+  KicksCrew: 0.99,
+  Poizon: 0.97,
+  Alias: 1.01,
+  "Stadium Goods": 1.09
 };
 
 const BASE_DATE = new Date("2026-02-20T00:00:00.000Z");
@@ -105,14 +109,12 @@ export function generateMarketSnapshot(
   const hypeFactor = 1.15 + rng() * 0.9;
 
   const marketBase = shoe.retailPrice * sizePremium * conditionFactor * hypeFactor;
-  const platforms: Platform[] = ["StockX", "GOAT", "eBay", "Flight Club", "KicksCrew"];
-
   return {
     shoeId,
     size,
     condition,
     variant,
     lastUpdated: BASE_DATE.toISOString(),
-    platforms: platforms.map((platform) => platformSnapshot(seed, platform, marketBase, size, condition))
+    platforms: PLATFORMS.map((platform) => platformSnapshot(seed, platform, marketBase, size, condition))
   };
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { useInventory } from "@/hooks/useInventory";
+import { PLATFORMS } from "@/lib/types";
 import type { Condition, Platform, Shoe } from "@/lib/types";
 
 type AddToInventoryProps = {
@@ -11,15 +12,7 @@ type AddToInventoryProps = {
   condition: Condition;
 };
 
-const buyPlatforms: Array<Platform | "Local" | "Other"> = [
-  "StockX",
-  "GOAT",
-  "eBay",
-  "Flight Club",
-  "KicksCrew",
-  "Local",
-  "Other"
-];
+const buyPlatforms: Array<Platform | "Local" | "Other"> = [...PLATFORMS, "Local", "Other"];
 
 export function AddToInventory({ shoe, size, condition }: AddToInventoryProps) {
   const { addItem } = useInventory();

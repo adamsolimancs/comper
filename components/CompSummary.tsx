@@ -15,7 +15,7 @@ export function CompSummary({ comp, lastUpdated }: CompSummaryProps) {
             Comper Comp{" "}
             <span
               className="tooltip-mark"
-              title="Average of recent marketplace sales with outlier trimming, then size and condition adjustments."
+              title="Based on the visible marketplace last-sale prices above. Comper Comp equals their simple average."
             >
               ⓘ
             </span>
@@ -29,37 +29,32 @@ export function CompSummary({ comp, lastUpdated }: CompSummaryProps) {
       </div>
 
       <p className="muted-copy">
-        Average of recent marketplace sales with outlier trimming and size/condition normalization.
+        Computed directly from the marketplace values shown above for this size, condition, and variant.
       </p>
 
       <div className="summary-grid">
         <div>
-          <p className="label">Trimmed mean</p>
-          <p>{formatCurrency(comp.breakdown.trimmedMean)}</p>
+          <p className="label">Average last sale</p>
+          <p>{formatCurrency(comp.breakdown.averageLastSale)}</p>
         </div>
         <div>
-          <p className="label">Median</p>
-          <p>{formatCurrency(comp.breakdown.median)}</p>
+          <p className="label">Median last sale</p>
+          <p>{formatCurrency(comp.breakdown.medianLastSale)}</p>
         </div>
         <div>
-          <p className="label">Weighted mean</p>
-          <p>{formatCurrency(comp.breakdown.weightedMean)}</p>
+          <p className="label">Average buy now</p>
+          <p>{formatCurrency(comp.breakdown.averageBuyNow)}</p>
         </div>
         <div>
-          <p className="label">Sample size</p>
-          <p>{comp.breakdown.sampleSize}</p>
+          <p className="label">Average highest bid</p>
+          <p>{formatCurrency(comp.breakdown.averageHighestBid)}</p>
         </div>
       </div>
 
-      <div className="weights-row">
-        {comp.breakdown.platformWeights.map((weight) => (
-          <span key={weight.platform} className="weight-pill">
-            {weight.platform}: {(weight.weight * 100).toFixed(0)}%
-          </span>
-        ))}
-      </div>
-
-      <p className="micro-copy">Data last updated: {new Date(lastUpdated).toLocaleTimeString()}</p>
+      <p className="micro-copy">
+        Sample size: {comp.breakdown.sampleSize} marketplaces. Data last updated:{" "}
+        {new Date(lastUpdated).toLocaleTimeString()}
+      </p>
     </section>
   );
 }

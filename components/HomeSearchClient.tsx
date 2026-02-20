@@ -48,7 +48,8 @@ export function HomeSearchClient({ catalog, initialQuery = "" }: HomeSearchClien
           <p className="eyebrow">Cross-market sneaker pricing</p>
           <h1>Comp faster, buy cleaner, scale margins.</h1>
           <p className="muted-copy">
-            Search once and compare live-like comps from StockX, GOAT, eBay, Flight Club, and KicksCrew.
+            Search once and compare live-like comps from StockX, GOAT, eBay, Flight Club, KicksCrew, Poizon,
+            Alias, and Stadium Goods.
           </p>
         </div>
 
