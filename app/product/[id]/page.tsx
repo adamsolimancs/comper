@@ -22,5 +22,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  return <ProductCompClient shoe={shoe} />;
+  const catalog = await getAllShoes();
+  return <ProductCompClient shoe={shoe} catalog={catalog} />;
 }

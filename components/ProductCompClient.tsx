@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { AddToInventory } from "@/components/AddToInventory";
@@ -16,6 +17,7 @@ import type { Condition, MarketSnapshot, PlatformMarket, Shoe } from "@/lib/type
 
 type ProductCompClientProps = {
   shoe: Shoe;
+  catalog: Shoe[];
 };
 
 function normalizeSelection(
@@ -29,7 +31,8 @@ function normalizeSelection(
   };
 }
 
-export function ProductCompClient({ shoe }: ProductCompClientProps) {
+export function ProductCompClient({ shoe, catalog }: ProductCompClientProps) {
+  const router = useRouter();
   const fallback = useMemo(
     () => ({ size: shoe.availableSizes[0], condition: "new" as Condition, variant: shoe.variants[0] }),
     [shoe.availableSizes, shoe.variants]
@@ -45,6 +48,8 @@ export function ProductCompClient({ shoe }: ProductCompClientProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeMarket, setActiveMarket] = useState<PlatformMarket | null>(null);
+  const [lookupQuery, setLookupQuery] = useState("");
+  const [lookupOpen, setLookupOpen] = useState(false);
 
   useEffect(() => {
     addRecentProduct({
@@ -106,6 +111,62 @@ export function ProductCompClient({ shoe }: ProductCompClientProps) {
   const comp = useMemo(() => {
     return calculateComperComp(marketSnapshot?.platforms ?? []);
   }, [marketSnapshot]);
+
+  const lookupSuggestions = useMemo(() => {
+    const normalized = lookupQuery.trim().toLowerCase();
+    const pool = catalog.filter((product) => product.id !== shoe.id);
+
+    if (!normalized) {
+      return pool.slice(0, 8);
+    }
+
+    return pool
+      .filter((product) => {
+        return (
+          product.name.toLowerCase().includes(normalized) ||
+          product.brand.toLowerCase().includes(normalized) ||
+          product.sku.toLowerCase().includes(normalized) ||
+          product.colorway.toLowerCase().includes(normalized)
+        );
+      })
+      .slice(0, 8);
+  }, [catalog, lookupQuery, shoe.id]);
+
+  const goToLookup = (value: string) => {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) {
+      return;
+    }
+
+    const exactMatch = catalog.find((product) => {
+      return (
+        product.sku.toLowerCase() === normalized ||
+        product.id.toLowerCase() === normalized ||
+        product.name.toLowerCase() === normalized
+      );
+    });
+
+    if (exactMatch) {
+      router.push(`/product/${exactMatch.id}`);
+      return;
+    }
+
+    const firstMatch = catalog.find((product) => {
+      return (
+        product.name.toLowerCase().includes(normalized) ||
+        product.brand.toLowerCase().includes(normalized) ||
+        product.sku.toLowerCase().includes(normalized) ||
+        product.colorway.toLowerCase().includes(normalized)
+      );
+    });
+
+    if (firstMatch) {
+      router.push(`/product/${firstMatch.id}`);
+      return;
+    }
+
+    router.push(`/?q=${encodeURIComponent(value.trim())}`);
+  };
 
   return (
     <div className={quickCompMode ? "product-layout quick" : "product-layout"}>
@@ -190,6 +251,52 @@ export function ProductCompClient({ shoe }: ProductCompClientProps) {
       </aside>
 
       <section className="product-main">
+        <section className="panel-card product-lookup">
+          <form
+            className="product-lookup-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              goToLookup(lookupQuery);
+              setLookupOpen(false);
+            }}
+          >
+            <input
+              className="product-lookup-input"
+              placeholder="Find another shoe by name, SKU, or brand"
+              value={lookupQuery}
+              onChange={(event) => {
+                setLookupQuery(event.target.value);
+                setLookupOpen(true);
+              }}
+              onFocus={() => setLookupOpen(true)}
+              onBlur={() => window.setTimeout(() => setLookupOpen(false), 120)}
+              aria-label="Search shoes from product page"
+            />
+            <button className="ghost-button" type="submit">
+              Go
+            </button>
+          </form>
+          {lookupOpen ? (
+            <div className="product-lookup-list">
+              {lookupSuggestions.length === 0 ? <p className="muted-copy">No matches</p> : null}
+              {lookupSuggestions.map((product) => (
+                <button
+                  key={product.id}
+                  className="product-lookup-item"
+                  type="button"
+                  onClick={() => {
+                    router.push(`/product/${product.id}`);
+                    setLookupOpen(false);
+                  }}
+                >
+                  <span>{product.name}</span>
+                  <span className="sku-inline">{product.sku}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </section>
+
         <div className="panel-head">
           <h2>Marketplace comps</h2>
           <p className="muted-copy">Tap a marketplace for trend + recent sales details.</p>

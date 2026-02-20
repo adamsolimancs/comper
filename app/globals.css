@@ -327,6 +327,10 @@ button:focus-visible {
   object-position: center 78%;
 }
 
+.product-image-wrap.large img {
+  object-position: center 92%;
+}
+
 .product-copy {
   display: grid;
   gap: 0.34rem;
@@ -472,6 +476,56 @@ button:focus-visible {
 .product-main {
   display: grid;
   gap: 1rem;
+}
+
+.product-lookup {
+  position: relative;
+}
+
+.product-lookup-form {
+  display: flex;
+  gap: 0.55rem;
+}
+
+.product-lookup-input {
+  flex: 1;
+  border: 1px solid var(--line-strong);
+  background: #0f1318;
+  color: var(--text);
+  border-radius: 12px;
+  padding: 0.68rem 0.86rem;
+}
+
+.product-lookup-list {
+  margin-top: 0.55rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: #0d1117;
+  overflow: hidden;
+  display: grid;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.product-lookup-item {
+  border: none;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  padding: 0.62rem 0.74rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.7rem;
+  cursor: pointer;
+}
+
+.product-lookup-item:last-child {
+  border-bottom: none;
+}
+
+.product-lookup-item:hover {
+  background: rgba(94, 200, 255, 0.08);
 }
 
 .market-grid {
@@ -892,6 +946,10 @@ button:focus-visible {
   }
 
   .search-form {
+    flex-direction: column;
+  }
+
+  .product-lookup-form {
     flex-direction: column;
   }
 

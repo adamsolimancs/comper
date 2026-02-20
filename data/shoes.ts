@@ -4,6 +4,7 @@ type Launch = {
   colorway: string;
   sku: string;
   releaseDate: string;
+  image?: string;
 };
 
 type ModelSeed = {
@@ -12,6 +13,15 @@ type ModelSeed = {
   retailPrice: number;
   launches: Launch[];
 };
+
+const prioritySkus = [
+  "384664-060",
+  "AQ3816-056",
+  "JR1598",
+  "DH6927-017",
+  "IF0673-001",
+  "IQ9772-001"
+];
 
 const modelSeeds: ModelSeed[] = [
   {
@@ -41,6 +51,12 @@ const modelSeeds: ModelSeed[] = [
     model: "Air Force 1 Low",
     retailPrice: 115,
     launches: [
+      {
+        colorway: "Ja Morant Swarovski",
+        sku: "IQ9772-001",
+        releaseDate: "2026-01-09",
+        image: "/shoes/nike-air-force-1-low-ja-morant-swarovski-iq9772-001.avif"
+      },
       { colorway: "Triple White", sku: "CW2288-111", releaseDate: "2018-01-01" },
       { colorway: "Triple Black", sku: "CW2288-001", releaseDate: "2018-01-01" },
       { colorway: "Linen", sku: "CU6312-200", releaseDate: "2024-04-11" },
@@ -63,10 +79,37 @@ const modelSeeds: ModelSeed[] = [
     model: "Air Jordan 4 Retro",
     retailPrice: 215,
     launches: [
+      {
+        colorway: "Raptors Drake 2019",
+        sku: "AQ3816-056",
+        releaseDate: "2019-06-02",
+        image: "/shoes/air-jordan-4-retro-raptors-drake-2019.avif"
+      },
       { colorway: "Bred Reimagined", sku: "FV5029-006", releaseDate: "2024-02-17" },
       { colorway: "Military Blue", sku: "FV5029-141", releaseDate: "2024-05-04" },
-      { colorway: "Thunder", sku: "DH6927-017", releaseDate: "2023-05-13" },
+      {
+        colorway: "Thunder",
+        sku: "DH6927-017",
+        releaseDate: "2023-05-13",
+        image: "/shoes/mens-jordan-4-retro-thunder-2023-black-tour-yellow.webp"
+      },
       { colorway: "SB Pine Green", sku: "DR5415-103", releaseDate: "2023-03-21" }
+    ]
+  },
+  {
+    brand: "Jordan",
+    model: "Air Jordan 6 Retro",
+    retailPrice: 200,
+    launches: [
+      {
+        colorway: "Reverse Infrared",
+        sku: "384664-060",
+        releaseDate: "2026-02-14",
+        image: "/shoes/air-jordan-6-retro-reverse-infrared.webp"
+      },
+      { colorway: "Infrared", sku: "384664-060-2024", releaseDate: "2024-11-23" },
+      { colorway: "Carmine", sku: "CT8529-106", releaseDate: "2021-02-13" },
+      { colorway: "Travis Scott British Khaki", sku: "DH0690-200", releaseDate: "2021-04-30" }
     ]
   },
   {
@@ -78,6 +121,19 @@ const modelSeeds: ModelSeed[] = [
       { colorway: "Black Cement", sku: "DN3707-010", releaseDate: "2018-02-17" },
       { colorway: "Craft Ivory", sku: "FJ9479-100", releaseDate: "2024-02-03" },
       { colorway: "A Ma Maniere While You Were Sleeping", sku: "FZ4811-001", releaseDate: "2024-08-20" }
+    ]
+  },
+  {
+    brand: "adidas",
+    model: "Harden Volume 10",
+    retailPrice: 160,
+    launches: [
+      {
+        colorway: "Black",
+        sku: "JR1598",
+        releaseDate: "2025-12-10",
+        image: "/shoes/harden-volume-10-black-jr1598.avif"
+      }
     ]
   },
   {
@@ -162,6 +218,12 @@ const modelSeeds: ModelSeed[] = [
     model: "Dunk Low",
     retailPrice: 130,
     launches: [
+      {
+        colorway: "Kirkland Signature",
+        sku: "IF0673-001",
+        releaseDate: "2025-09-16",
+        image: "/shoes/nike-sb-dunk-low-kirkland-signature-if0673-001.avif"
+      },
       { colorway: "Travis Scott", sku: "CT5053-001", releaseDate: "2020-02-29" },
       { colorway: "Jarritos", sku: "FD0860-001", releaseDate: "2023-05-06" },
       { colorway: "Yuto Horigome", sku: "FQ1180-001", releaseDate: "2023-08-25" },
@@ -185,7 +247,7 @@ function slugify(text: string): string {
     .replace(/^-|-$/g, "");
 }
 
-export const shoes: Shoe[] = modelSeeds.flatMap((modelSeed, modelIndex) => {
+const generatedShoes: Shoe[] = modelSeeds.flatMap((modelSeed, modelIndex) => {
   return modelSeed.launches.map((launch, launchIndex) => {
     const id = `${slugify(modelSeed.brand)}-${slugify(modelSeed.model)}-${slugify(launch.colorway)}`;
 
@@ -197,12 +259,28 @@ export const shoes: Shoe[] = modelSeeds.flatMap((modelSeed, modelIndex) => {
       colorway: launch.colorway,
       releaseDate: new Date(`${launch.releaseDate}T12:00:00.000Z`).toISOString(),
       retailPrice: modelSeed.retailPrice,
-      images: ["/shoe-placeholder.png"],
+      images: [launch.image ?? "/shoe-placeholder.png"],
       availableSizes: sizeRuns[(modelIndex + launchIndex) % sizeRuns.length],
       variants: variants.slice(0, 2 + ((modelIndex + launchIndex) % 2))
     };
   });
 });
+
+const priorityIndexBySku = new Map(prioritySkus.map((sku, index) => [sku, index]));
+
+export const shoes: Shoe[] = generatedShoes
+  .map((shoe, index) => ({ shoe, index }))
+  .sort((a, b) => {
+    const aPriority = priorityIndexBySku.get(a.shoe.sku);
+    const bPriority = priorityIndexBySku.get(b.shoe.sku);
+
+    if (aPriority !== undefined || bPriority !== undefined) {
+      return (aPriority ?? Number.MAX_SAFE_INTEGER) - (bPriority ?? Number.MAX_SAFE_INTEGER);
+    }
+
+    return a.index - b.index;
+  })
+  .map((entry) => entry.shoe);
 
 export function getShoeById(id: string): Shoe | undefined {
   return shoes.find((shoe) => shoe.id === id);
